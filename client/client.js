@@ -68,7 +68,7 @@ function createEncoder(inputSamplerate) {
 
   if (useAsynchronous) {
     enc = new Webcast.Encoder.Asynchronous({
-      scripts: ["http://http://webcast.github.io/webcast.js/client/libsamplerate.js", "http://http://webcast.github.io/webcast.js/client/libshine.js", "http://http://webcast.github.io/webcast.js/client/webcast.js"],
+      scripts: ["http://webcast.github.io/webcast.js/client/libsamplerate.js", "http://webcast.github.io/webcast.js/client/libshine.js", "http://webcast.github.io/webcast.js/client/webcast.js"],
       encoder: enc
     });
   }
@@ -92,6 +92,8 @@ function createWebcastNode(source) {
 
 function createMadSource() {
   killWebcast();
+
+  var wsUri = $("#uri").val();
 
   var enc = createEncoder();
   var socket = webcast = new Webcast.Socket({
