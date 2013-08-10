@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Webcast.js by webcast</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Webcast.js</h1>
+        <h2>Streaming from your browser to the world!</h2>
+        <a href="https://github.com/webcast/webcast.js" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="webcastjs" class="anchor" href="#webcastjs"><span class="octicon octicon-link"></span></a>Webcast.js</h1>
+
+<table>
+<tr><td><img src="https://rawgithub.com/savonet/webcast/master/misc/webcast.svg" alt="Webcast Flowchart" title="Webcast Flowchart"></td></tr>
+<tr><td>The Webcast Flowchart</td></tr>
+</table><h3>
+<a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h3>
+
+<p>The webcast library is designed to provide a readily available browser-based clients to stream local files and live media (webcam video, microphone audio).</p>
+
+<p>The API contains several classes:</p>
+
+<ul>
+<li>
+<code>Webcast.Encoder.Raw</code>: encoder returning raw s8 samples.</li>
+<li>
+<code>Webcast.Encoder.Mp3</code>: encoder returning mp3 data. Requires <a href="https://github.com/savonet/shine/tree/master/js">libshine.js</a>.</li>
+<li>
+<code>Webcast.Encoder.Resample</code>: a wrapper to resample encoder's input. Requires <a href="https://github.com/savonet/libsamplerate-js">libsamplerate.js</a>.</li>
+<li>
+<code>Webcast.Encoder.Asynchronous</code>: a wrapper to encode in a <a href="http://www.w3.org/TR/workers/">Web Worker</a>
+</li>
+<li>
+<code>Webcast.Socket</code>: a simple wrapper around <code>WebSockets</code> that implements the <code>webcast</code> protocol.</li>
+<li>
+<code>Webcast.Node</code>: a wrapper to create a <code>webcast</code> node, in-par with the Web Audio API.</li>
+</ul><p>Here's the highlight of how to use the library:</p>
+
+<pre><code>var source = (...);
+
+var encoder = new Webcast.Encoder.Mp3({
+  channels: 2,
+  samplerate: 44100,
+  bitrate: 128
+});
+
+if (inputSampleRate !== 44100) {
+  encoder = new Webcast.Encoder.Resample({
+    encoder:    encoder,
+    samplerate: inputSampleRate 
+  });
+}
+
+if (useWorker) {
+  encoder = new Webcast.Encoder.Asynchronous({
+    encoder: encoder,
+    scripts: [(...], // full path to required scripts for the worker.
+                     // usually includes requires encoders and webcast.js 
+  });
+}
+
+var webcast = new Webcast.Node({
+  url: "ws://localhost:8080/mount",
+  encoder: encoder,
+  context: audioContext,
+  options: options
+});
+
+source.connect(webcast);
+webcast.connect(audioContext.destination);
+
+webcast.sendMetadata({
+  title:  "My Awesome Stream",
+  artist: "The Dude"
+});
+
+</code></pre>
+
+<p>The library involves several cutting-edge technologies and, thus, require a fairly modern browser.
+Here's a quick summary of the required technologies:</p>
+
+<ul>
+<li>
+<a href="http://www.w3.org/TR/2011/WD-websockets-20110929/">WebSocket API</a>: This is the transport layer. It is readily available in most modern browsers.</li>
+<li>
+<a href="https://dvcs.w3.org/hg/audio/raw-file/tip/webaudio/specification.html">Web Audio API</a>: This is the API used to manipulate audio and video data inside the browser. It is currently fully implemented in Chrome and only partially in Firefox Nightly.</li>
+<li>
+<a href="http://asmjs.org/">asm.js</a>: This is the technology used to optimize the mp3 encoder. It is currently only supported by Firefox.</li>
+</ul><h3>
+<a name="how-to-test" class="anchor" href="#how-to-test"><span class="octicon octicon-link"></span></a>How to test?</h3>
+
+<h4>
+<a name="client" class="anchor" href="#client"><span class="octicon octicon-link"></span></a>Client</h4>
+
+<p>The <code>examples/client/</code> directory of this repository contains a client example, sending mp3 encoded data, using 
+<a href="https://github.com/savonet/shine/tree/master/js">libshine.js</a> or raw PCM data.</p>
+
+<p>You can start the client by executing <code>make</code> in the repository. You will need a functional <code>python</code> binary 
+with the <code>SimpleHTTPServer</code> module.</p>
+
+<p>Once started, you can point your browser to <a href="http://localhost:8000/">http://localhost:8000/</a>.</p>
+
+<h4>
+<a name="server" class="anchor" href="#server"><span class="octicon octicon-link"></span></a>Server</h4>
+
+<p>The <code>examples/server/</code> directory contains a demo server, written in <a href="http://nodejs.org/">NodeJS</a>. In order to run it, you
+will need a functional node install. Once this is done, you can execute <code>npm install</code> in the <code>server/</code> directory
+and then <code>cake run</code> and you should be good to go!</p>
+
+<p>Alternatively, a fully functional implementation of the protocol is available in
+<a href="https://github.com/savonet/liquidsoap">liquidsoap</a>. To test it, you can simply run <a href="https://github.com/savonet/liquidsoap">liquidsoap</a> (git source only for now) with the following command line:</p>
+
+<pre><code>liquidsoap 'output.ao(fallible=true,audio_to_stereo(input.harbor("mount",port=8080)))'
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/webcast/webcast.js/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/webcast/webcast.js/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/webcast/webcast.js"></a> is maintained by <a href="https://github.com/webcast">webcast</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
